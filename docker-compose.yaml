@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  spark-master:
+    build: .
+    container_name: spark-master
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master", "--host", "spark-master"]
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+    volumes:
+      - ./app:/app
+      - ./drivers:/drivers
+    hostname: spark-master
+    networks:
+      - rede_spark
+
+  spark-worker:
+    build: .
+    container_name: spark-worker
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"]
+    depends_on:
+      - spark-master
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./app:/app
+      - ./drivers:/drivers
+    hostname: spark-worker
+    networks:
+      - rede_spark
+
+  spark-submit:
+    build: .
+    container_name: spark-submit
+    entrypoint: /bin/sleep infinity
+    depends_on:
+      - spark-master
+      - spark-worker
+    volumes:
+      - ./app:/app
+      - ./drivers:/drivers
+    networks:
+      - rede_spark
+
+networks:
+  rede_spark:
+    driver: bridge
